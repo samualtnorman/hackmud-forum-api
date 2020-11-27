@@ -1,6 +1,6 @@
 {
 	"name": "typescript-project",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -9,15 +9,17 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/samualtnorman/typescript-project.git"
+		"url": "https://github.com/samualtnorman/hackmud-forum-api"
 	},
 	"author": "Samual Norman",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/samualtnorman/typescript-project/issues"
+		"url": "https://github.com/samualtnorman/hackmud-forum-api/issues"
 	},
-	"homepage": "https://github.com/samualtnorman/typescript-project#readme",
-	"dependencies": {},
+	"homepage": "https://github.com/samualtnorman/hackmud-forum-api#readme",
+	"dependencies": {
+		"htmlparser2": "^5.0.1"
+	},
 	"devDependencies": {
 		"@types/node": "^14.6.3",
 		"typescript": "^4.0.2"
