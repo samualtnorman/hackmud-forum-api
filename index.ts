@@ -4,34 +4,7 @@ import { Parser, DomHandler, DomUtils } from "htmlparser2"
 
 const { findAll, isText } = DomUtils
 
-const url = "https://www.hackmud.com/forums/general_discussion/swan_lock_idea"
-const { hostname, path } = parseURL(url)
-
-const handler = new DomHandler((error, dom) => {
-	if (error)
-		throw error
-
-	findAll(node => {
-		const {
-			["data-users"]: users,
-			["data-title"]: title,
-			class: class_
-		} = node.attribs
-
-		if (users)
-			console.log("users:", JSON.parse(users).map(({ text }: { text: string }) => text))
-
-		if (title)
-			console.log("title:", title)
-
-		if (class_ == "text top" && node.firstChild && isText(node.firstChild))
-			console.log("message:", node.firstChild.data)
-
-		return true
-	}, dom)
-})
-
-const parser = new Parser(handler)
+const hostname = "https://www.hackmud.com/"
 
 interface Message {
 	id: string
@@ -53,37 +26,88 @@ interface Forum {
 	boards: Board[]
 }
 
-request({
-	method: "GET",
-	hostname,
-	path,
-	headers: {
-		Cookie: "_session_id=NOPE"
-	}
-}, res => res
-	.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
-	.on("end", () => parser.end())
-).end()
+getForum()
 
-function get(url: string) {
-	const { hostname, path } = parseURL(url)
-	let data = ""
+function page(path: string, callback: Parameters<typeof findAll>[0]) {
+	return new Promise((resolve, reject) => {
+		const parser = new Parser(new DomHandler((error, dom) => {
+			if (error)
+				reject(error)
 
-	return new Promise<string>((resolve, reject) => {
+			resolve(findAll(callback, dom))
+		}))
+
 		request({
 			method: "GET",
 			hostname,
 			path,
 			headers: {
-				"Content-Type": "application/json"
+				Cookie: "_session_id=NOPE"
 			}
 		}, res => res
-			.on("data", (chunk: Buffer) => data += chunk.toString())
-			.on("end", () => resolve(data))
+			.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
+			.on("end", parser.end)
 		).end()
 	})
 }
 
-function isRecord(value: any): value is Record<string, unknown> {
-	return !!value && typeof value == "object"
+function getForum() {
+	return new Promise((resolve, reject) => {
+		const parser = new Parser(new DomHandler((error, dom) => {
+			if (error)
+				reject(error)
+
+			console.log(dom)
+		}))
+
+		request({
+			method: "GET",
+			hostname,
+			path: "forums",
+			headers: {
+				// Cookie: "_session_id=NOPE"
+			}
+		}, res => res
+			.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
+			.on("end", parser.end)
+		).end()
+	})
+}
+
+function getPost(path: string) {
+	const parser = new Parser(new DomHandler((error, dom) => {
+		if (error)
+			throw error
+
+		findAll(node => {
+			const {
+				"data-users": users,
+				"data-title": title,
+				class: class_
+			} = node.attribs
+
+			if (users)
+				console.log("users:", JSON.parse(users).map(({ text }: { text: string }) => text))
+
+			if (title)
+				console.log("title:", title)
+
+			if (class_ == "text top" && node.firstChild && isText(node.firstChild))
+				console.log("message:", node.firstChild.data)
+
+			return true
+		}, dom)
+	}))
+
+	request({
+		method: "GET",
+		hostname,
+		path,
+		headers: {
+			Cookie: "_session_id=NOPE"
+		}
+	}, res => res
+		.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
+		.on("end", () => parser.end())
+	).end()
 }
