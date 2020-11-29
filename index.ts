@@ -1,10 +1,9 @@
 import { request } from "https"
-import { parse as parseURL } from "url"
-import { Parser, DomHandler, DomUtils } from "htmlparser2"
+import { Parser, DomHandler, DomUtils, ElementType } from "htmlparser2"
 
 const { findAll, isText } = DomUtils
 
-const hostname = "https://www.hackmud.com/"
+const hostname = "www.hackmud.com"
 
 interface Message {
 	id: string
@@ -42,7 +41,7 @@ function page(path: string, callback: Parameters<typeof findAll>[0]) {
 			hostname,
 			path,
 			headers: {
-				Cookie: "_session_id=NOPE"
+				Cookie: "_session_id=e65e32f8925d3da148e0086789f162e1"
 			}
 		}, res => res
 			.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
@@ -57,7 +56,11 @@ function getForum() {
 			if (error)
 				reject(error)
 
-			console.log(dom)
+			const html = dom[0]
+
+			if (html.type == ElementType.Tag) {
+				console.log(html)
+			}
 		}))
 
 		request({
@@ -69,7 +72,7 @@ function getForum() {
 			}
 		}, res => res
 			.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
-			.on("end", parser.end)
+			.on("end", () => parser.end())
 		).end()
 	})
 }
