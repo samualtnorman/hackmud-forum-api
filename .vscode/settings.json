@@ -8,5 +8,6 @@
         "package-lock.json": true,
         "dist": true,
         "build": true
-    }
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
 }
