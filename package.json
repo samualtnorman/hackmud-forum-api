@@ -19,7 +19,7 @@
 	"homepage": "https://github.com/samualtnorman/hackmud-forum-api#readme",
 	"dependencies": {
 		"domutils": "^2.4.2",
-		"htmlparser2": "^5.0.1"
+		"htmlparser2": "^6.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^14.6.3",
