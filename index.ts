@@ -1,12 +1,9 @@
 import { request } from "https"
 import { Parser, DomHandler } from "htmlparser2"
-import { Node } from "domhandler"
-import { isText, isTag, isComment } from "domutils"
-
-type TypeGuard<A, B extends A> = (x: A) => x is B
-
-type JSONValue = string | number | boolean | JSONValue[] | JSONObject | null
-type JSONObject = { [key: string]: JSONValue }
+import { isText, isTag } from "domutils"
+import { assert, isTruthy, JSONValue } from "./lib"
+import * as lib from "./lib"
+import { Element, Node } from "domhandler"
 
 interface Message {
 	id: string
@@ -46,25 +43,9 @@ interface Forum {
 	posts: Post[]
 }
 
-class CustomError extends Error {
-	name = this.constructor.name
-
-	constructor(message: string) {
-		super(message)
-	}
-}
-
-class AssertError extends CustomError {
-	constructor(message: string) {
-		super(message)
-	}
-}
-
 const hostname = "hackmud.com"
 
-getForum()
-
-function getForum() {
+export function getForum(sessionID: string) {
 	return new Promise((resolve, reject) => {
 		const parser = new Parser(new DomHandler((error, [ ,, html ]) => {
 			if (error)
@@ -119,7 +100,7 @@ function getForum() {
 
 			assert(json, Array.isArray)
 
-			console.log(json)
+			resolve(json)
 		}))
 
 		request({
@@ -127,7 +108,7 @@ function getForum() {
 			hostname,
 			path: "/forums",
 			headers: {
-				Cookie: "_session_id=d4bc306b5bfcd7668dafa90b960a7b23"
+				Cookie: `_session_id=${sessionID}`
 			}
 		}, res => res
 			.on("data", (chunk: Buffer) => parser.write(chunk.toString()))
@@ -136,83 +117,12 @@ function getForum() {
 	})
 }
 
-function stringifyNode(node: Node | Node[], recursive = Infinity): string {
-	if (Array.isArray(node))
-		return node.map(node => stringifyNode(node, recursive)).join("\n")
-
-	if (isText(node))
-		return "text " + JSON.stringify(node.data)
-
-	if (isTag(node)) {
-		let o = node.name + " " + node.attributes.map(({ name, value }) => `${name}: ${/\s/g.test(value) ? JSON.stringify(value): value}`).join(", ")
-
-		if (!recursive)
-			o += " {" + node.children.length + "}"
-		else if (node.children.length)
-			o += " {\n" + indent(stringifyNode(node.children, recursive - 1), "    ") + "\n}"
-		else
-			o += " {}"
-
-		return o
-	}
-
-	if (isComment(node))
-		return "comment " + JSON.stringify(node.data)
-
-	console.log(node)
-
-	throw new Error("unknown node type")
-}
-
-function indent(value: string, char = "\t", amount = 1) {
-	return value.split("\n").map(value => char.repeat(amount) + value).join("\n")
-}
-
-function assert(value: any): asserts value
-
-function assert<
-	A,
-	B extends A
->(
-	value: A,
-	g1: TypeGuard<A, B>
-): asserts value is B
-
-function assert<
-	A,
-	B extends A,
-	C extends B
->(
-	value: A,
-	g1: TypeGuard<A, B>,
-	g2: TypeGuard<B, C>
-): asserts value is C
-
-function assert<
-	A,
-	B extends A,
-	C extends B,
-	D extends C
->(
-	value: A,
-	g1: TypeGuard<A, B>,
-	g2: TypeGuard<B, C>,
-	g3: TypeGuard<C, D>
-): asserts value is D
-
-function assert(value: any, ...guards: Array<TypeGuard<any, any>>) {
-	if (guards.length) {
-		for (const guard of guards)
-			if (!guard(value))
-				throw new AssertError(`${value} failed ${guard.name || "assertion"}`)
-	} else if (!value)
-		throw new AssertError(`${value} failed assertion`)
-}
-
-function isTruthy<T>(value: T): value is NonNullable<T> {
-	return !!value
-}
-
-function isJSONObject(value: JSONValue): value is JSONObject {
-	return !!value && typeof value == "object" && !Array.isArray(value)
+export function getSessionID() {
+	return new Promise<Node[]>(async (resolve, reject) => {
+		lib.request({
+			method: "GET",
+			hostname,
+			path: "/accounts/auth/steam"
+		}).then(({ res }) => console.log(res.headers))
+	})
 }
